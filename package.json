@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "prepare": "chmod +x update.sh",
+    "update": "./update.sh",
+    "dev": "npm run update && next dev",
+    "build": "npm run update && next build",
     "start": "next start",
     "lint": "next lint"
   },
