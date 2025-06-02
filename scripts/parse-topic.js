@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const cheerio = require('cheerio');
+const bson = require('bson');
 
 const filePath = process.argv[2];
 if (!filePath || !fs.existsSync(filePath)) {
@@ -11,30 +12,62 @@ if (!filePath || !fs.existsSync(filePath)) {
 const html = fs.readFileSync(filePath, 'utf-8');
 const $ = cheerio.load(html);
 
-// Select all section headers starting from "Introduction" up to "References"
-const headings = $('h2');
-const content = {};
-let capturing = false;
-let currentSection = '';
-
-headings.each((i, elem) => {
-  const heading = $(elem).text().trim();
-
-  if (heading === 'Introduction') capturing = true;
-  if (heading === 'References') capturing = false;
-
-  if (capturing) {
-    currentSection = heading;
-    content[currentSection] = '';
-    let sibling = $(elem).next();
-
+// === STEP 1: Extract references ===
+const references = {};
+$('h2').each((_, h2) => {
+  const heading = $(h2).text().trim();
+  if (heading === 'References') {
+    let sibling = $(h2).next();
     while (sibling.length && sibling[0].tagName !== 'h2') {
-      content[currentSection] += sibling.text().trim() + '\n\n';
+      const text = sibling.text().trim();
+      const match = text.match(/^(\d+)\s*(.*)/);
+      if (match) {
+        references[match[1]] = match[2];
+      }
       sibling = sibling.next();
     }
   }
 });
 
-const outputFile = filePath.replace(/\.html$/, '.json');
-fs.writeFileSync(outputFile, JSON.stringify(content, null, 2));
-console.log(`✅ JSON saved to ${outputFile}`);
+// === STEP 2: Capture sections from Introduction through References ===
+const content = {};
+let capturing = false;
+let currentSection = '';
+let sibling = null;
+
+$('h2').each((_, el) => {
+  const heading = $(el).text().trim();
+
+  if (heading === 'Introduction') capturing = true;
+
+  if (capturing) {
+    currentSection = heading;
+    content[currentSection] = '';
+    sibling = $(el).next();
+
+    while (sibling.length && sibling[0].tagName !== 'h2') {
+      let text = sibling.text().trim();
+
+      // Replace [1], [2]... with (actual reference)
+      text = text.replace(/(\d+)/g, (_, num) =>
+        references[num] ? `(${references[num]})` : `[${num}]`
+      );
+
+      content[currentSection] += text + '\n\n';
+      sibling = sibling.next();
+    }
+
+    if (heading === 'References') {
+      capturing = false;
+    }
+  }
+});
+
+// === STEP 3: Write to BSON ===
+const name = path.basename(filePath, '.html'); // e.g., "Jaundice"
+const bsonData = bson.serialize(content);
+
+fs.mkdirSync('db', { recursive: true });
+fs.writeFileSync(path.join('db', `${name}.bson`), bsonData);
+
+console.log(`✅ BSON saved to db/${name}.bson`);
