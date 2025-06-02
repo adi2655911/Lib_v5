@@ -1,16 +1,31 @@
 import { notFound } from 'next/navigation';
+import path from 'path';
+import fs from 'fs/promises';
+import { deserialize } from 'bson';
 
-export default async function TopicPage({ params }: { params: Promise<{ data: string }> }) {
-  const { data } = await params; // ✅ Await this
-  const res = await fetch(`http://localhost:3000/api/data/${data}`);
-  if (!res.ok) return notFound();
+export default async function DataPage({
+  params
+}: {
+  params: Promise<{ data: string }>;
+}) {
+  const { data } = await params; // e.g., "Bell Palsy"
+  const filePath = path.join(process.cwd(), 'db', `${data}.bson`);
 
-  const topic = await res.json();
+  try {
+    const buffer = await fs.readFile(filePath);
+    const content = deserialize(buffer) as Record<string, string>;
 
-  return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold mb-4">{topic.title}</h1>
-      <pre className="whitespace-pre-wrap text-gray-700">{topic.content}</pre>
-    </main>
-  );
+    return (
+      <main className="p-6 space-y-6">
+        {Object.entries(content).map(([section, text]) => (
+          <section key={section}>
+            <h2 className="text-xl font-bold mb-2">{section}</h2>
+            <p className="text-gray-700 whitespace-pre-line">{text}</p>
+          </section>
+        ))}
+      </main>
+    );
+  } catch (err) {
+    return notFound();
+  }
 }

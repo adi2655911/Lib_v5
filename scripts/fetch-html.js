@@ -1,11 +1,9 @@
-// This file fetches topic info from StatPearls using curl
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
 const baseUrl = 'https://www.ncbi.nlm.nih.gov';
 
-// CLI usage: node fetch-html.js <relativeLink> <name>
 const link = process.argv[2];
 const name = process.argv[3]; // e.g., "Abacavir"
 
@@ -17,21 +15,22 @@ if (!link || !name) {
 const htmlPath = path.join('htmldb', `${name}.html`);
 const bsonPath = path.join('db', `${name}.bson`);
 
-// Skip if already exists
 if (fs.existsSync(htmlPath) || fs.existsSync(bsonPath)) {
   console.log(`⚠️ Skipping ${name} — already exists.`);
   process.exit(0);
 }
 
-// Ensure output folder exists
 fs.mkdirSync('htmldb', { recursive: true });
 
 const fullUrl = `${baseUrl}${link}`;
 
 try {
   execSync(`curl -sL "${fullUrl}" -o "${htmlPath}"`);
-  console.log(`✅ Saved HTML to ${htmlPath}`);
+  console.log(`✅ HTML saved to ${htmlPath}`);
+
+  // Now auto-generate BSON
+  execSync(`node scripts/parse-topic.js "${htmlPath}"`, { stdio: 'inherit' });
+  console.log(`✅ BSON saved to db/${name}.bson`);
 } catch (err) {
-  console.error(`❌ Failed to fetch ${fullUrl}:`, err.message);
-  process.exit(1);
+  console.error(`❌ Error during fetch or parse:`, err.message);
 }

@@ -12,7 +12,7 @@ if (!filePath || !fs.existsSync(filePath)) {
 const html = fs.readFileSync(filePath, 'utf-8');
 const $ = cheerio.load(html);
 
-// === STEP 1: Extract references ===
+// === STEP 1: Extract references (1 format) ===
 const references = {};
 $('h2').each((_, h2) => {
   const heading = $(h2).text().trim();
@@ -29,7 +29,7 @@ $('h2').each((_, h2) => {
   }
 });
 
-// === STEP 2: Capture sections from Introduction through References ===
+// === STEP 2: Extract sections from "Continuing Education Activity" through "References" ===
 const content = {};
 let capturing = false;
 let currentSection = '';
@@ -38,7 +38,7 @@ let sibling = null;
 $('h2').each((_, el) => {
   const heading = $(el).text().trim();
 
-  if (heading === 'Introduction') capturing = true;
+  if (heading === 'Continuing Education Activity') capturing = true;
 
   if (capturing) {
     currentSection = heading;
@@ -48,7 +48,7 @@ $('h2').each((_, el) => {
     while (sibling.length && sibling[0].tagName !== 'h2') {
       let text = sibling.text().trim();
 
-      // Replace [1], [2]... with (actual reference)
+      // Replace all num markers with (reference text)
       text = text.replace(/(\d+)/g, (_, num) =>
         references[num] ? `(${references[num]})` : `[${num}]`
       );
@@ -58,13 +58,13 @@ $('h2').each((_, el) => {
     }
 
     if (heading === 'References') {
-      capturing = false;
+      capturing = false; // Stop after including References
     }
   }
 });
 
 // === STEP 3: Write to BSON ===
-const name = path.basename(filePath, '.html'); // e.g., "Jaundice"
+const name = path.basename(filePath, '.html'); // e.g., "abscess"
 const bsonData = bson.serialize(content);
 
 fs.mkdirSync('db', { recursive: true });

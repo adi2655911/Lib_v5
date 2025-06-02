@@ -8,6 +8,14 @@ type Subject = {
   link: string;
 };
 
+// Slugify function for clean filenames and URLs
+function slugify(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-') // replace spaces/symbols with -
+    .replace(/(^-|-$)/g, '');    // trim leading/trailing -
+}
+
 function extractId(link: string): string {
   const parts = link.split('/');
   return parts[parts.length - 2];
@@ -34,12 +42,16 @@ export default function HomePage() {
 
   const handleClick = async (subject: Subject) => {
     const id = extractId(subject.link);
+    const slug = slugify(subject.name);
+
     try {
-      await fetch(`/api/fetch?id=${id}&link=${encodeURIComponent(subject.link)}&name=${encodeURIComponent(subject.name)}`);
+      await fetch(
+        `/api/fetch?id=${id}&link=${encodeURIComponent(subject.link)}&name=${slug}`
+      );
     } catch (err) {
       console.error(`Failed to fetch HTML for ${id}`, err);
     } finally {
-      router.push(`/data/${id}`);
+      router.push(`/data/${slug}`);
     }
   };
 
