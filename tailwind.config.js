@@ -1,20 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    './src/**/*.{js,ts,jsx,tsx,mdx}',
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/**/*.{js,ts,jsx,tsx}', // Important
+    './app/**/*.{js,ts,jsx,tsx}', // Also include if `app/` exists
   ],
-  darkMode: 'class',
   theme: {
-    extend: {
-      fontFamily: {
-        serif: ['Merriweather', 'Georgia', 'serif'],
-      },
-      colors: {
-        heading: '#7c3aed',
-        text: '#1e293b',
-      },
-    },
+    extend: {},
   },
-  plugins: [require('@tailwindcss/typography')],
+  plugins: [],
 };
