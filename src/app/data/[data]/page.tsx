@@ -1,31 +1,26 @@
 import { notFound } from 'next/navigation';
 import path from 'path';
 import fs from 'fs/promises';
-import { deserialize } from 'bson';
+import LinkInterceptor from './link-interceptor'; // We’ll define this below
 
 export default async function DataPage({
-  params
+  params,
 }: {
   params: Promise<{ data: string }>;
 }) {
-  const { data } = await params; // e.g., "Bell Palsy"
-  const filePath = path.join(process.cwd(), 'db', `${data}.bson`);
+  const { data } = await params;
+  const filePath = path.join(process.cwd(), 'htmldb', `${data}.html`);
 
   try {
-    const buffer = await fs.readFile(filePath);
-    const content = deserialize(buffer) as Record<string, string>;
+    const html = await fs.readFile(filePath, 'utf-8');
 
     return (
-      <main className="p-6 space-y-6">
-        {Object.entries(content).map(([section, text]) => (
-          <section key={section}>
-            <h2 className="text-xl font-bold mb-2">{section}</h2>
-            <p className="text-gray-700 whitespace-pre-line">{text}</p>
-          </section>
-        ))}
+      <main className="prose prose-lg mx-auto px-6 py-10">
+        <LinkInterceptor />
+        <div dangerouslySetInnerHTML={{ __html: html }} />
       </main>
     );
-  } catch (err) {
+  } catch {
     return notFound();
   }
 }

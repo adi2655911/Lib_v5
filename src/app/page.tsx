@@ -2,18 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Nav from "../components/nav.tsx";
 
 type Subject = {
   name: string;
   link: string;
 };
 
-// Slugify function for clean filenames and URLs
 function slugify(str: string): string {
   return str
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-') // replace spaces/symbols with -
-    .replace(/(^-|-$)/g, '');    // trim leading/trailing -
+    .replace(/[^a-z0-9]+/g, '-') // replace non-alphanum with dashes
+    .replace(/(^-|-$)/g, '');    // trim edges
 }
 
 function extractId(link: string): string {
@@ -24,6 +24,7 @@ function extractId(link: string): string {
 export default function HomePage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clicking, setClicking] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -31,31 +32,39 @@ export default function HomePage() {
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) setSubjects(data);
-        else console.error("Invalid subject list");
-        setLoading(false);
+        else console.error('Invalid subject list');
       })
-      .catch((err) => {
-        console.error('Fetch error:', err);
-        setLoading(false);
-      });
+      .catch((err) => console.error('Fetch error:', err))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleClick = async (subject: Subject) => {
+    if (clicking) return;
+    setClicking(true);
+
     const id = extractId(subject.link);
     const slug = slugify(subject.name);
 
     try {
-      await fetch(
+      const res = await fetch(
         `/api/fetch?id=${id}&link=${encodeURIComponent(subject.link)}&name=${slug}`
       );
+
+      const json = await res.json();
+      if (json.status !== 'success' && json.status !== 'skipped') {
+        throw new Error(json.message || 'Unknown error');
+      }
     } catch (err) {
-      console.error(`Failed to fetch HTML for ${id}`, err);
+      console.error(`❌ Failed to fetch HTML for ${id}:`, err);
     } finally {
       router.push(`/data/${slug}`);
+      setClicking(false);
     }
   };
 
   return (
+    <>
+      <Nav />
     <main className="p-6">
       <h1 className="text-2xl font-bold mb-4">StatPearls Topics</h1>
 
@@ -69,7 +78,8 @@ export default function HomePage() {
             <li key={index}>
               <button
                 onClick={() => handleClick(subject)}
-                className="text-left text-blue-600 hover:underline cursor-pointer"
+                className="text-left text-blue-600 hover:underline cursor-pointer disabled:opacity-50"
+                disabled={clicking}
               >
                 {subject.name}
               </button>
@@ -78,5 +88,6 @@ export default function HomePage() {
         </ul>
       )}
     </main>
+    </>
   );
 }

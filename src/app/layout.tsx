@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "StatPearls Viewer",
-  description: "A simple app to explore StatPearls topics securely.",
+  title: "StatPearls - Drug Library",
+  description: "Access accurate, structured medical topics from StatPearls with a clean UI and dark mode.",
 };
 
 export default function RootLayout({
@@ -24,17 +24,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <head>
-        <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>{metadata.title}</title>
-        <meta name="description" content={metadata.description} />
-        {/* Tailwind CDN (optional if you're already using PostCSS + Tailwind) */}
-        <script
-          src="https://cdn.tailwindcss.com"
-          defer
-        ></script>
-      </head>
+<head>
+  <meta charSet="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
       <body className="min-h-screen bg-white font-sans antialiased">
         {children}
       </body>

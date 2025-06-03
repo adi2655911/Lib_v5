@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const cheerio = require('cheerio');
-const bson = require('bson');
 
 const filePath = process.argv[2];
 if (!filePath || !fs.existsSync(filePath)) {
@@ -29,7 +28,7 @@ $('h2').each((_, h2) => {
   }
 });
 
-// === STEP 2: Extract sections from "Continuing Education Activity" through "References" ===
+// === STEP 2: Extract from "Continuing Education Activity" through "References" ===
 const content = {};
 let capturing = false;
 let currentSection = '';
@@ -48,7 +47,7 @@ $('h2').each((_, el) => {
     while (sibling.length && sibling[0].tagName !== 'h2') {
       let text = sibling.text().trim();
 
-      // Replace all num markers with (reference text)
+      // Replace 1 with (reference text)
       text = text.replace(/(\d+)/g, (_, num) =>
         references[num] ? `(${references[num]})` : `[${num}]`
       );
@@ -58,16 +57,16 @@ $('h2').each((_, el) => {
     }
 
     if (heading === 'References') {
-      capturing = false; // Stop after including References
+      capturing = false;
     }
   }
 });
 
-// === STEP 3: Write to BSON ===
-const name = path.basename(filePath, '.html'); // e.g., "abscess"
-const bsonData = bson.serialize(content);
+// === STEP 3: Write to JSON ===
+const name = path.basename(filePath, '.html');
+const outputPath = path.join('jsondb', `${name}.json`);
 
-fs.mkdirSync('db', { recursive: true });
-fs.writeFileSync(path.join('db', `${name}.bson`), bsonData);
+fs.mkdirSync('jsondb', { recursive: true });
+fs.writeFileSync(outputPath, JSON.stringify(content, null, 2));
 
-console.log(`✅ BSON saved to db/${name}.bson`);
+console.log(`✅ JSON saved to ${outputPath}`);
