@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/usr/bin/env bash
 echo "📥 Fetching latest HTML..."
 curl -sL 'https://www.ncbi.nlm.nih.gov/books/NBK430685/' -o index.html
 
